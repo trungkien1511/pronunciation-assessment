@@ -1,0 +1,35 @@
+# Môi trường ảo (Virtual Environments)
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+
+# Dữ liệu gốc và Dữ liệu đã xử lý (Gây nặng kho lưu trữ)
+l2arctic_release_v5.0/
+dataset_splits/
+train_metadata.json
+
+# Thư mục lưu Model đã train (Cực kỳ nặng)
+wav2vec2-l2arctic_final/
+checkpoint-*/
+models/
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# Code rác cần bỏ đi
+_deprecated_root_scripts/
+
+# File Audio Test linh tinh
+*.wav
+*.mp3
+*.flac
+
+# IDE & Hệ điều hành
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

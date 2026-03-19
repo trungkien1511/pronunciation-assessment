@@ -1,0 +1,6 @@
+textgrid
+librosa
+pandas
+datasets
+soundfile
+tqdm
