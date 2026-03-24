@@ -14,7 +14,7 @@ Hệ thống được thiết kế theo kiến trúc chuẩn MLOps, tinh chỉnh
 Dự án được phân chia module rõ ràng để tái sử dụng và dễ dàng bảo trì:
 
 ```text
-├── phoneme_assessment/          # 🧠 Package Lõi (Core Backend)
+├── src/          # 🧠 Package Lõi (Core Backend)
 │   ├── dataset.py               # Xử lý Pytorch Dataset & Padding (DataCollator CTC)
 │   ├── model.py                 # Khởi tạo mô hình & Logic Rã đông (Gradual Unfreezing)
 │   ├── metrics.py               # Hàm tính lỗi PER (Phoneme Error Rate)

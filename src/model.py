@@ -87,7 +87,7 @@ def load_finetuned_model(model_dir, unfreeze_top_n_layers=2):
     return model
 
 if __name__ == "__main__":
-    vocab_json = r"d:\test\dataset_splits\vocab.json"
+    vocab_json = "dataset_splits\vocab.json"
     
     try:
         # Chạy khởi tạo

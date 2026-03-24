@@ -4,8 +4,8 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from torch.utils.data import DataLoader
-from phoneme_assessment.dataset import L2ArcticPhonemeDataset, DataCollatorCTCWithPadding
-from phoneme_assessment.model import initialize_model
+from src.dataset import L2ArcticPhonemeDataset, DataCollatorCTCWithPadding
+from src.model import initialize_model
 import json
 
 def debug():

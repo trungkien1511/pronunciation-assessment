@@ -7,8 +7,8 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Custom functions
-from phoneme_assessment.utils.parse_textgrid import parse_textgrid
-from phoneme_assessment.utils.preprocess_audio import preprocess_audio
+from src.utils.parse_textgrid import parse_textgrid
+from src.utils.preprocess_audio import preprocess_audio
 
 def build_dataset_metadata(l2_arctic_dir, output_json, sample_rate=16000):
     """
@@ -86,8 +86,8 @@ def build_dataset_metadata(l2_arctic_dir, output_json, sample_rate=16000):
 
 if __name__ == "__main__":
     # Thay đổi đường dẫn này trỏ tới bộ dữ liệu thực tế l2arctic_release_v5.0 trên máy bạn
-    dataset_dir = r"d:\test\l2arctic_release_v5.0"
-    output_file = r"d:\test\train_metadata.json"
+    dataset_dir = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')), 'l2arctic_release_v5.0')
+    output_file = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')), 'train_metadata.json')
     
     if os.path.exists(dataset_dir):
         print(f"Bắt đầu xử lý thư mục {dataset_dir} ...")

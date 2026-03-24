@@ -4,9 +4,9 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from transformers import TrainingArguments, Trainer
-from phoneme_assessment.dataset import L2ArcticPhonemeDataset, DataCollatorCTCWithPadding
-from phoneme_assessment.model import initialize_model
-from phoneme_assessment.metrics import compute_metrics
+from src.dataset import L2ArcticPhonemeDataset, DataCollatorCTCWithPadding
+from src.model import initialize_model
+from src.metrics import compute_metrics
 
 def main():
     # 1. Đường dẫn dữ liệu

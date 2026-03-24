@@ -135,8 +135,8 @@ if __name__ == "__main__":
     # Test DataLoader
     from torch.utils.data import DataLoader
     
-    train_json = r"d:\test\dataset_splits\train.json"
-    vocab_json = r"d:\test\dataset_splits\vocab.json"
+    train_json = "dataset_splits\train.json"
+    vocab_json = "dataset_splits\vocab.json"
     
     dataset = L2ArcticPhonemeDataset(train_json, vocab_json)
     collator = DataCollatorCTCWithPadding(pad_token_id=0)

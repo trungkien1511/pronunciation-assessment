@@ -6,7 +6,7 @@ from transformers import Wav2Vec2ForCTC, Wav2Vec2FeatureExtractor
 import json
 
 class L2ArcticInference:
-    def __init__(self, model_path, vocab_path="d:/test/dataset_splits/vocab.json"):
+    def __init__(self, model_path, vocab_path="dataset_splits/vocab.json"):
         """
         Khởi tạo pipeline Inference (Dự đoán) của mô hình.
         
@@ -72,14 +72,14 @@ class L2ArcticInference:
 
 if __name__ == "__main__":
     print("Script sẵn sàng cho module Inference!")
-    model_dir = r"d:\test\wav2vec2-l2arctic_final" # Trỏ thẳng đến THƯ MỤC này
+    model_dir = "wav2vec2-l2arctic_final" # Trỏ thẳng đến THƯ MỤC này
     
     if os.path.exists(model_dir):
         ai = L2ArcticInference(model_dir)
         
         # Test thử AI nghe một file wav có sẵn trong tập Test
         # Đổi đường dẫn này tới một file wav tồn tại trong máy bạn
-        test_audio = r"d:\test\l2arctic_release_v5.0\ABA\wav\arctic_a0001.wav" 
+        test_audio = "l2arctic_release_v5.0\ABA\wav\arctic_a0001.wav" 
         
         if os.path.exists(test_audio):
             predicted = ai.predict(test_audio)

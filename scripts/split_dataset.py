@@ -77,7 +77,7 @@ def split_dataset(input_json, output_dir, test_speakers=None, val_ratio=0.1, ran
         print(f"Đã lưu {out_path}")
 
 if __name__ == "__main__":
-    input_file = r"d:\test\train_metadata.json"
+    input_file = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')), 'train_metadata.json')
     output_directory = r"d:\test\dataset_splits"
     
     if os.path.exists(input_file):

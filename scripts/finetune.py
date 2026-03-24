@@ -4,13 +4,13 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from transformers import TrainingArguments, Trainer
-from phoneme_assessment.dataset import L2ArcticPhonemeDataset, DataCollatorCTCWithPadding
-from phoneme_assessment.model import load_finetuned_model
-from phoneme_assessment.metrics import compute_metrics
+from src.dataset import L2ArcticPhonemeDataset, DataCollatorCTCWithPadding
+from src.model import load_finetuned_model
+from src.metrics import compute_metrics
 
 def main():
     # 1. Đường dẫn dữ liệu và Model cũ đã train xong vỏ (Classifier)
-    base_dir = r"d:\test"
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     train_json = os.path.join(base_dir, "dataset_splits", "train.json")
     val_json = os.path.join(base_dir, "dataset_splits", "val.json")
     vocab_json = os.path.join(base_dir, "dataset_splits", "vocab.json")

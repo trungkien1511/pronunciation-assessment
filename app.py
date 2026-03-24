@@ -1,9 +1,9 @@
 import os
-from phoneme_assessment.inference import L2ArcticInference
-from phoneme_assessment.alignment import PronunciationAligner
+from src.inference import L2ArcticInference
+from src.alignment import PronunciationAligner
 
 class PronunciationAssessmentSystem:
-    def __init__(self, model_dir="d:/test/wav2vec2-l2arctic_final"):
+    def __init__(self, model_dir="wav2vec2-l2arctic_final"):
         """
         Khởi tạo Hệ thống Đánh giá Phát âm toàn diện.
         Kết hợp 2 khối:
@@ -77,9 +77,9 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser(description="Hệ Thống Đánh Giá Phát Âm Tiếng Anh (L2-ARCTIC)")
-    parser.add_argument("--audio", type=str, required=False, default=r"d:\test\l2arctic_release_v5.0\ABA\wav\arctic_a0001.wav", help="Đường dẫn đến file Audio (.wav)")
+    parser.add_argument("--audio", type=str, required=False, default="l2arctic_release_v5.0/ABA/wav/arctic_a0001.wav", help="Đường dẫn đến file Audio (.wav)")
     parser.add_argument("--text", type=str, required=False, default="Author of the danger trail, Philip Steels", help="Văn bản tiếng Anh cần đọc")
-    parser.add_argument("--model_dir", type=str, default=r"d:\test\wav2vec2-l2arctic_final", help="Đường dẫn chứa mô hình AI đã train")
+    parser.add_argument("--model_dir", type=str, default="wav2vec2-l2arctic_final", help="Đường dẫn chứa mô hình AI đã train")
     
     args = parser.parse_args()
     

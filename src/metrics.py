@@ -2,7 +2,7 @@ import json
 import numpy as np
 import evaluate
 
-def compute_metrics(pred, vocab_path="d:/test/dataset_splits/vocab.json"):
+def compute_metrics(pred, vocab_path="dataset_splits/vocab.json"):
     """
     Hàm tính toán Phoneme Error Rate (PER) dựa trên model predictions.
     Sẽ được HuggingFace Trainer tự động gọi sau mỗi Epoch (hoặc eval step).
