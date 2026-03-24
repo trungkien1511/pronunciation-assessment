@@ -14,7 +14,7 @@ Hệ thống được thiết kế theo kiến trúc chuẩn MLOps, tinh chỉnh
 Dự án được phân chia module rõ ràng để tái sử dụng và dễ dàng bảo trì:
 
 ```text
-├── phoneme_assessment/          # 🧠 Package Lõi (Core Backend)
+├── src/          # 🧠 Package Lõi (Core Backend)
 │   ├── dataset.py               # Xử lý Pytorch Dataset & Padding (DataCollator CTC)
 │   ├── model.py                 # Khởi tạo mô hình & Logic Rã đông (Gradual Unfreezing)
 │   ├── metrics.py               # Hàm tính lỗi PER (Phoneme Error Rate)
@@ -92,11 +92,3 @@ python scripts/train.py
 # Mở khóa 2 lớp não sâu, dùng tốc độ siêu vi 1e-5 để AI hiểu giọng vùng miền L2
 python scripts/finetune.py
 ```
-
----
-
-## ⚙ Tính năng Kỹ thuật Tối cao
-* **Đặc trị Catastrophic Forgetting & CTC Blank Collapse:** Giải quyết triệt để lỗi "mô hình ù tai" (Loss kẹt ở 7.0) bằng cách dùng cơ chế **Transfer Learning** (đóng băng 90M đỉnh tri thức Transformer của `facebook/wav2vec2-base-960h`) lúc ban đầu.
-* **Cơ chế Gradual Unfreezing (Rã động sâu):** Đã tinh chỉnh để sau khi lớp vỏ hoàn thiện, tầng Transformer bên dưới được hạ Learning Rate cực tiểu nhằm thích nghi vô cùng sắc bén với giọng nói và lỗi luyến vần thực tế của người Châu Á (Tách bạch cực nét giữa âm `OW` vs `AH`, `NG` vs `N`).
-* Tự động nhận diện Âm tiết tiếng ồn `noise`, `silence`, xoá bỏ trọng âm rác để tinh chỉnh bảng từ vựng từ 93 xuống mức hoàn hảo 45 Phonemes.
-* Cơ chế gióng hàng thông minh bỏ qua lỗi "Insertion" (Thừa âm) do người dùng chắp vá âm bậy vào giữa chuỗi.
