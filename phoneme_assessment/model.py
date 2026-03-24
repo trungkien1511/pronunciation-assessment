@@ -55,6 +55,37 @@ def initialize_model(vocab_path, model_name="facebook/wav2vec2-base"):
     
     return model
 
+def load_finetuned_model(model_dir, unfreeze_top_n_layers=2):
+    """
+    Tải lại Model đã được train Vỏ (Classifier Head) thành công.
+    Thực hiện Rã Đông (Unfreeze) N lớp Transformer trên cùng để học sâu (Fine-tune).
+    """
+    model = Wav2Vec2ForCTC.from_pretrained(model_dir)
+    
+    # 1. Luôn đóng băng CNN Feature Extractor
+    model.freeze_feature_encoder()
+    
+    # 2. Đóng băng toàn bộ Transformer để làm nền tảng an toàn
+    for param in model.wav2vec2.parameters():
+        param.requires_grad = False
+        
+    # 3. Rã đông (Mở khóa) Top N lớp Transformer cuối cùng
+    if unfreeze_top_n_layers > 0:
+        print(f"Bắt đầu Rã đông (Unfreeze) {unfreeze_top_n_layers} lớp Transformer trên cùng...")
+        # Lấy danh sách các lớp Transformer (Layers)
+        encoder_layers = model.wav2vec2.encoder.layers
+        num_layers = len(encoder_layers)
+        
+        # Mở khóa N lớp cuối
+        start_unfreeze_idx = max(0, num_layers - unfreeze_top_n_layers)
+        for i in range(start_unfreeze_idx, num_layers):
+            for param in encoder_layers[i].parameters():
+                param.requires_grad = True
+                
+        print(f"Đã mở khóa các lớp từ {start_unfreeze_idx} đến {num_layers - 1} để AI học giọng vùng miền!")
+        
+    return model
+
 if __name__ == "__main__":
     vocab_json = r"d:\test\dataset_splits\vocab.json"
     
