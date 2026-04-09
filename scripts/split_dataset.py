@@ -78,7 +78,7 @@ def split_dataset(input_json, output_dir, test_speakers=None, val_ratio=0.1, ran
 
 if __name__ == "__main__":
     input_file = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')), 'train_metadata.json')
-    output_directory = r"d:\test\dataset_splits"
+    output_directory = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'dataset_splits')
     
     if os.path.exists(input_file):
         # Có thể chủ động set test_speakers=['ABA', 'LXC', 'PNV'] nếu muốn cố định

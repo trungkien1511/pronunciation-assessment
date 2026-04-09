@@ -15,8 +15,8 @@ def main():
     val_json = os.path.join(base_dir, "dataset_splits", "val.json")
     vocab_json = os.path.join(base_dir, "dataset_splits", "vocab.json")
     
-    old_model_dir = os.path.join(base_dir, "wav2vec2-l2arctic_final")
-    output_dir = os.path.join(base_dir, "wav2vec2-l2arctic_finetuned") # Thư mục lưu thành quả mới
+    old_model_dir = os.path.join(base_dir, "wav2vec2-l2arctic_final_v3")
+    output_dir = os.path.join(base_dir, "wav2vec2-l2arctic_finetuned_v3") # Thư mục lưu thành quả mới
     
     print("=========================================================================")
     print("🚀 GIAI ĐOẠN 5: TỐI ƯU CẤP ĐỘ CAO (GRADUAL UNFREEZING)")
@@ -24,13 +24,13 @@ def main():
     
     # 2. Chuẩn bị DataLoader
     print("Đang chuẩn bị dữ liệu...")
-    train_dataset = L2ArcticPhonemeDataset(train_json, vocab_json)
-    val_dataset = L2ArcticPhonemeDataset(val_json, vocab_json)
+    train_dataset = L2ArcticPhonemeDataset(train_json, vocab_json, augment=True)
+    val_dataset = L2ArcticPhonemeDataset(val_json, vocab_json, augment=False)
     data_collator = DataCollatorCTCWithPadding(pad_token_id=0)
     
     # 3. Khởi tạo Model Rã Đông
     # Mở khóa 2 lớp Transformer cuối cùng để học cách bắt chất giọng người châu Á
-    model = load_finetuned_model(old_model_dir, unfreeze_top_n_layers=2)
+    model = load_finetuned_model(old_model_dir, unfreeze_top_n_layers=4)
     
     # 4. Thiết lập Hyperparameters "Vi phẫu" (Micro-learning rate)
     # Vì đang đụng vào Não giữa (Transformer) vốn đã quá giỏi, phải xài Learning Rate siêu nhỏ
@@ -38,7 +38,7 @@ def main():
         output_dir=output_dir,
         eval_strategy="epoch",
         save_strategy="epoch",
-        learning_rate=1e-5,          # LR SIÊU NHỎ: 1e-5 (Bảo vệ Transformer khỏi Catastrophic Forgetting)
+        learning_rate=5e-6,          # LR CỰC NHỎ: 5e-6 (do mở 4 layers, cần LR thấp hơn để tránh Catastrophic Forgetting)
         per_device_train_batch_size=8,
         per_device_eval_batch_size=8,
         gradient_accumulation_steps=2,

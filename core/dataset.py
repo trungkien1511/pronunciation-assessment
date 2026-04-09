@@ -1,11 +1,13 @@
 import json
 import torch
 import librosa
+import numpy as np
+import random
 from torch.utils.data import Dataset
 from transformers import Wav2Vec2FeatureExtractor
 
 class L2ArcticPhonemeDataset(Dataset):
-    def __init__(self, json_path, vocab_path, max_length=160000):
+    def __init__(self, json_path, vocab_path, max_length=160000, augment=False):
         """
         PyTorch Dataset cho bài toán nhận diện Phoneme.
         
@@ -13,6 +15,7 @@ class L2ArcticPhonemeDataset(Dataset):
            json_path (str): Đường dẫn tới train.json, val.json hoặc test.json
            vocab_path (str): Đường dẫn tới vocab.json
            max_length (int): Độ dài tối đa của mảng audio (160000 = 10 giây ở 16kHz)
+           augment (bool): Bật/tắt Data Augmentation (chỉ bật khi training)
         """
         # Đọc file metadata
         with open(json_path, 'r', encoding='utf-8') as f:
@@ -33,33 +36,78 @@ class L2ArcticPhonemeDataset(Dataset):
         
         self.max_length = max_length
         self.unk_token_id = self.vocab.get("<unk>", 3)
+        self.augment = augment
 
-    def _phonemes_to_ids(self, reference_phonemes, labels):
+    def _phonemes_to_ids(self, item):
         """
-        Chuyển đổi thực tế User đã đọc (chứ KHÔNG PHẢI âm chuẩn) thành dãy ID.
-        Vì mục tiêu của ta là train model NGHE được chính xác User đọc gì.
+        Chuyển đổi danh sách phoneme thành dãy ID cho CTC target.
         
-        Logic: Mình duyệt qua `reference_phonemes` và `labels` (có độ dài bằng nhau từ bước 2).
-        - Nếu label = "correct": User đọc chuẩn -> dùng token `reference_phoneme`
-        - Nếu label = "substitution": Trong nhãn file ta không lưu âm User đọc (PPL) mà lưu 's', nên ở đây ta tạm thời vẫn coi như User cần học cách đọc đúng, HOẶC mô hình sẽ tự đoán bậy.
-          Tuy nhiên, L2-ARCTIC gốc có lưu 'PPL' (kế hoạch ban đầu ta parse "CPL, PPL, s" rồi quên mất PPL).
-          Do bản ghi `parse_textgrid.py` trước ta chỉ lưu Lỗi dạng "substitution" và "CPL". 
-          *TỐI ƯU HƠN*: Ta thay vì ép nó học PPL, ta cứ dạy nó học theo CPL nếu ta làm dạng Mispronunciation Dectetion thuần, hoặc lý tưởng nhất là sửa lại parse_textgrid để lấy được PPL.
-          
-          Để đơn giản trước: Mô hình chúng ta sẽ cố gắng dự đoán CPL, nhưng ở những đoạn user đọc sai nó sẽ bị 'vấp' và output CTC ra một âm lạ.
+        Logic PPL (Perceived Phoneme Label):
+        - Nếu label = "correct": Dùng reference_phoneme (CPL = PPL, đọc đúng)
+        - Nếu label = "substitution": Dùng perceived_phoneme (PPL) - âm thực tế người nói đọc
+          → Dạy model nghe đúng cái người nói phát ra, không ép nghe thành âm chuẩn
+        - Nếu label = "deletion": Bỏ qua (CTC sẽ tự học khoảng trống)
         """
-        # Vì đây là ví dụ, ta học trực tiếp mảng reference_phonemes
-        # Các chỗ user đọc sai thay vì học từ đó, ta có thể thay bằng <unk> hoặc bắt học đúng (forced).
-        # Tạm thời cứ cho nó học Reference.
+        reference_phonemes = item["reference_phonemes"]
+        labels = item["labels"]
+        # Backward compatible: dùng perceived_phonemes nếu có, nếu không fallback về reference
+        perceived_phonemes = item.get("perceived_phonemes", None)
+        
         ids = []
-        for ph, label in zip(reference_phonemes, labels):
+        for i, (ph, label) in enumerate(zip(reference_phonemes, labels)):
             if ph == "sil": 
-                continue # CTC tự học khoảng trống, ta có thể bỏ qua token sil trong target
+                continue  # CTC tự học khoảng trống
+            
+            if label == "deletion":
+                continue  # Người nói nuốt âm, không có output tương ứng
                 
-            token_id = self.vocab.get(ph, self.unk_token_id)
+            if label == "substitution" and perceived_phonemes is not None:
+                # Dùng PPL (âm thực tế người nói đọc) làm target
+                ppl = perceived_phonemes[i]
+                if ppl is not None:
+                    token_id = self.vocab.get(ppl, self.unk_token_id)
+                else:
+                    token_id = self.vocab.get(ph, self.unk_token_id)
+            else:
+                # Correct hoặc fallback: dùng reference phoneme
+                token_id = self.vocab.get(ph, self.unk_token_id)
+                
             ids.append(token_id)
             
         return ids
+
+    def _augment_audio(self, speech_array, sr=16000):
+        """
+        Áp dụng Data Augmentation cho audio. Mỗi kỹ thuật có 50% xác suất được áp dụng.
+        
+        1. Speed perturbation (0.9x ~ 1.1x)
+        2. Volume perturbation (±20%)
+        3. Additive Gaussian noise (SNR 20~40 dB)
+        """
+        # 1. Speed Perturbation
+        if random.random() < 0.5:
+            speed_factor = random.uniform(0.9, 1.1)
+            speech_array = librosa.effects.time_stretch(speech_array, rate=speed_factor)
+        
+        # 2. Volume Perturbation
+        if random.random() < 0.5:
+            volume_factor = random.uniform(0.8, 1.2)
+            speech_array = speech_array * volume_factor
+            
+        # 3. Additive Gaussian Noise (SNR 20~40 dB)
+        if random.random() < 0.5:
+            snr_db = random.uniform(20, 40)
+            signal_power = np.mean(speech_array ** 2)
+            noise_power = signal_power / (10 ** (snr_db / 10))
+            noise = np.random.normal(0, np.sqrt(noise_power), len(speech_array))
+            speech_array = speech_array + noise.astype(speech_array.dtype)
+        
+        # 4. Pitch Shifting (±2 semitones) - Giúp model quen với giọng nam trầm và nữ cao
+        if random.random() < 0.3:
+            n_steps = random.uniform(-2, 2)
+            speech_array = librosa.effects.pitch_shift(speech_array, sr=sr, n_steps=n_steps)
+            
+        return speech_array
 
     def __len__(self):
         return len(self.data)
@@ -74,14 +122,18 @@ class L2ArcticPhonemeDataset(Dataset):
             speech_array, sr = librosa.load(audio_path, sr=16000)
         except Exception as e:
             # Fake data if error file
-            speech_array = [0.0] * 16000 
+            speech_array = np.zeros(16000, dtype=np.float32)
             print(f"Lỗi load audio: {audio_path}")
+            
+        # 2. Data Augmentation (chỉ khi training)
+        if self.augment:
+            speech_array = self._augment_audio(speech_array)
             
         # Cắt bớt nếu quá dài
         if len(speech_array) > self.max_length:
             speech_array = speech_array[:self.max_length]
             
-        # 2. Chuẩn hóa qua Feature Extractor
+        # 3. Chuẩn hóa qua Feature Extractor
         features = self.feature_extractor(
             speech_array, 
             sampling_rate=16000
@@ -89,8 +141,8 @@ class L2ArcticPhonemeDataset(Dataset):
         input_values = features.input_values[0]
         attention_mask = features.attention_mask[0]
         
-        # 3. Tạo Target Labels
-        labels = self._phonemes_to_ids(item["reference_phonemes"], item["labels"])
+        # 4. Tạo Target Labels (sử dụng PPL cho substitution cases)
+        labels = self._phonemes_to_ids(item)
         
         return {
             "input_values": input_values,     # Float Tensor

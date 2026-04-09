@@ -50,7 +50,7 @@ def build_dataset_metadata(l2_arctic_dir, output_json, sample_rate=16000):
                 continue
                 
             # 1. Trích xuất Chuẩn & Lỗi từ TextGrid
-            reference_phonemes, labels = parse_textgrid(str(tg_path))
+            reference_phonemes, perceived_phonemes, labels = parse_textgrid(str(tg_path))
             if not reference_phonemes:
                 error_count += 1
                 continue
@@ -70,6 +70,7 @@ def build_dataset_metadata(l2_arctic_dir, output_json, sample_rate=16000):
                 "audio_filepath": str(wav_path.absolute()),
                 "textgrid_filepath": str(tg_path.absolute()),
                 "reference_phonemes": reference_phonemes,
+                "perceived_phonemes": perceived_phonemes,
                 "labels": labels,
                 "duration": round(duration, 3)
             }

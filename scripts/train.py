@@ -3,22 +3,22 @@ import torch
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from transformers import TrainingArguments, Trainer
+from transformers import TrainingArguments, Trainer, EarlyStoppingCallback
 from src.dataset import L2ArcticPhonemeDataset, DataCollatorCTCWithPadding
 from src.model import initialize_model
 from src.metrics import compute_metrics
 
 def main():
     # 1. Đường dẫn dữ liệu
-    data_dir = r"d:\test\dataset_splits"
+    data_dir = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')), "dataset_splits")
     train_json = os.path.join(data_dir, "train.json")
     val_json = os.path.join(data_dir, "val.json")
     vocab_json = os.path.join(data_dir, "vocab.json")
     
     # 2. Khởi tạo Datasets
     print("Đang chuẩn bị dữ liệu...")
-    train_dataset = L2ArcticPhonemeDataset(train_json, vocab_json)
-    val_dataset = L2ArcticPhonemeDataset(val_json, vocab_json)
+    train_dataset = L2ArcticPhonemeDataset(train_json, vocab_json, augment=True)
+    val_dataset = L2ArcticPhonemeDataset(val_json, vocab_json, augment=False)
     
     # Ở đây do Wav2Vec2 tự xử lý Padding = 0 cho Input, 
     # và ta cần Padding Label = -100 để Pytorch CrossEntropy/CTC Loss bỏ qua.
@@ -31,7 +31,7 @@ def main():
     # 4. Thiết lập tham số huấn luyện (Hyperparameters)
     # Lượng RAM và VRAM sẽ tùy thuộc vào cấu hình máy, bạn có thể chỉnh batch_size lại nếu báo lỗi OOM (Out of Memory).
     training_args = TrainingArguments(
-        output_dir=r"d:\test\wav2vec2-l2arctic",    # Thư mục lưu Checkpoints
+        output_dir=r"wav2vec2-l2arctic_v3",         # Thư mục lưu Checkpoints
         per_device_train_batch_size=8,              # Batch size lúc train. Nếu CPU/GPU yếu hãy hạ xuống 4 hoặc 2.
         per_device_eval_batch_size=8,               # Batch size lúc đánh giá.
         gradient_accumulation_steps=2,              # Gộp gradient (2 x 8 = 16 batch size thực tế)
@@ -58,7 +58,8 @@ def main():
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         data_collator=data_collator,
-        compute_metrics=compute_metrics
+        compute_metrics=compute_metrics,
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=5)]  # Tự dừng nếu PER không giảm sau 5 lần eval
     )
     
     # 6. Kích hoạt Training
@@ -67,7 +68,7 @@ def main():
     
     # 7. Lưu lại Model cuối cùng
     print("\n✅ Huấn luyện hoàn tất. Đang lưu mô hình...")
-    final_model_path = r"d:\test\wav2vec2-l2arctic_final"
+    final_model_path = r"wav2vec2-l2arctic_final_v3"
     trainer.save_model(final_model_path)
     
     print(f"Mô hình đã được lưu thành công tại: {final_model_path}")

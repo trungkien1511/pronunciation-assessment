@@ -38,20 +38,27 @@ NOISE_TOKENS = {'sil', 'sp', 'spn', '', '{SL}', '{LG}', '{CG}', '{BR}', '{NS}'}
 def parse_textgrid(file_path):
     """
     Phân tích file TextGrid từ L2-ARCTIC và trích xuất danh sách âm vị chuẩn cùng nhãn lỗi.
+    
+    Returns:
+        tuple: (reference_phonemes, perceived_phonemes, labels)
+            - reference_phonemes: Danh sách âm vị chuẩn (CPL - Canonical Phoneme Label)
+            - perceived_phonemes: Danh sách âm vị thực tế người nói phát ra (PPL - Perceived Phoneme Label)
+            - labels: Danh sách nhãn lỗi ('correct', 'substitution', 'deletion')
     """
     try:
         tg = textgrid.TextGrid.fromFile(file_path)
     except Exception as e:
         print(f"Lỗi khi đọc file {file_path}: {e}")
-        return [], []
+        return [], [], []
         
     # Lấy tier 'phones'
     phones_tier = tg.getFirst('phones')
     if phones_tier is None:
         print(f"Không tìm thấy tier 'phones' trong file {file_path}")
-        return [], []
+        return [], [], []
         
     reference_phonemes = []
+    perceived_phonemes = []
     labels = []
     
     for interval in phones_tier:
@@ -75,12 +82,18 @@ def parse_textgrid(file_path):
                 continue
             
             if err_type == 's':
-                # Substitution
+                # Substitution: Lưu cả CPL (âm chuẩn) và PPL (âm người nói thực tế đọc)
+                ppl_clean = clean_phoneme(ppl)
+                # Nếu PPL hợp lệ trong ARPAbet thì dùng, nếu không thì fallback về CPL
+                if not is_valid_phoneme(ppl_clean):
+                    ppl_clean = cpl_clean
                 reference_phonemes.append(cpl_clean)
+                perceived_phonemes.append(ppl_clean)
                 labels.append('substitution')
             elif err_type == 'd':
-                # Deletion
+                # Deletion: Người nói nuốt âm, không phát ra gì
                 reference_phonemes.append(cpl_clean)
+                perceived_phonemes.append(None)  # Không có âm phát ra
                 labels.append('deletion')
             elif err_type == 'a':
                 # Insertion: Bỏ qua hoàn toàn vì reference không có âm này
@@ -99,20 +112,22 @@ def parse_textgrid(file_path):
                 continue
                 
             reference_phonemes.append(clean)
+            perceived_phonemes.append(clean)  # Đọc đúng: PPL = CPL
             labels.append('correct')
             
         else:
             # Định dạng không hợp lệ → bỏ qua
             continue
 
-    return reference_phonemes, labels
+    return reference_phonemes, perceived_phonemes, labels
 
 # Test
 if __name__ == "__main__":
     test_path = "sample.TextGrid" 
     if os.path.exists(test_path):
-        refs, states = parse_textgrid(test_path)
+        refs, ppls, states = parse_textgrid(test_path)
         print("Mảng Phoneme chuẩn:\n", refs)
+        print("Mảng Phoneme thực tế (PPL):\n", ppls)
         print("Mảng Label trạng thái:\n", states)
     else:
         print(f"File test {test_path} không tồn tại.")
